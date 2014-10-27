@@ -1,0 +1,13 @@
+apply plugin: 'scala'
+apply plugin:'application'
+
+mainClassName = 'com.vizrt.test.akka.persistence.Main'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.typesafe.akka:akka-actor_2.10:2.3.6'
+    compile 'com.typesafe.akka:akka-persistence-experimental_2.10:2.3.6'
+}
