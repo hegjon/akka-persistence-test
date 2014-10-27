@@ -9,3 +9,6 @@ case object ExportSuccess
 
 case object StartTranscode
 case object TranscodeSuccess
+
+case object StartPublish
+case object PublishSuccess

@@ -1,7 +1,7 @@
 package com.vizrt.test.akka.persistence
 
 import akka.actor.ActorLogging
-import akka.persistence.{RecoveryCompleted, PersistentActor}
+import akka.persistence.{PersistentActor, RecoveryCompleted}
 
 import scala.concurrent.duration._
 
@@ -28,11 +28,11 @@ class TransferActor(transfer: Transfer) extends PersistentActor with ActorLoggin
     case m@StartExport =>
       log.info(m.toString)
       persist(m)(noop)
-      context.system.scheduler.scheduleOnce(5 seconds, context.self, ExportSuccess)
+      context.system.scheduler.scheduleOnce(5 seconds, self, ExportSuccess)
     case m@ExportSuccess =>
       log.info(m.toString)
       persist(m)(noop)
-      context.self ! StartTranscode
+      self ! StartTranscode
       context.become(transcoding)
     case x => log.info(s"Unknown command: $x")
   }
@@ -41,10 +41,22 @@ class TransferActor(transfer: Transfer) extends PersistentActor with ActorLoggin
     case m@StartTranscode =>
       log.info(m.toString)
       persist(m)(noop)
-      context.system.scheduler.scheduleOnce(15 seconds, context.self, TranscodeSuccess)
+      context.system.scheduler.scheduleOnce(15 seconds, self, TranscodeSuccess)
     case m@TranscodeSuccess =>
       log.info(m.toString)
       persist(m)(noop)
-      context.self ! StartTranscode
+      self ! StartPublish
+      context.become(publishing)
+  }
+
+  def publishing: Receive = {
+    case m@StartPublish =>
+      log.info(m.toString)
+      persist(m)(noop)
+      context.system.scheduler.scheduleOnce(10 seconds, self, PublishSuccess)
+    case m@PublishSuccess =>
+      log.info(m.toString)
+      persist(m)(noop)
+      context.stop(self)
   }
 }
