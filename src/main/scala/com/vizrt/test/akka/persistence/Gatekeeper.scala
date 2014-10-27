@@ -1,9 +1,9 @@
 package com.vizrt.test.akka.persistence
 
-import akka.actor.Actor
+import akka.actor.{ActorLogging, Actor}
 
-class Gatekeeper extends Actor {
+class Gatekeeper extends Actor with ActorLogging {
   override def receive = {
-    case "new-transfer" => println("new transfer!!")
+    case NewTransfer(transfer) => log.info(s"New transfer: $transfer")
   }
 }
