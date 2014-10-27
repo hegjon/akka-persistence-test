@@ -10,7 +10,7 @@ class Gatekeeper extends PersistentActor with ActorLogging {
 
   override def receiveRecover = {
     case RecoveryCompleted => log.info("Recovery completed!")
-    case NewTransfer(transfer) =>
+    case m@NewTransfer(transfer) =>
       log.info(s"Recover transfer: $transfer")
       val child = context.actorOf(Props(classOf[TransferActor], transfer), transfer.id)
       activeTransfers += (transfer -> child)
@@ -22,7 +22,6 @@ class Gatekeeper extends PersistentActor with ActorLogging {
       log.info(s"New transfer: $transfer")
       val child = context.actorOf(Props(classOf[TransferActor], transfer), transfer.id)
       activeTransfers += (transfer -> child)
-      child ! StartExport
     }
   }
 }

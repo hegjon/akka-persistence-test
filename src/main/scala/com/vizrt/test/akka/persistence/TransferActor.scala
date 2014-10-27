@@ -8,21 +8,31 @@ import scala.concurrent.duration._
 class TransferActor(transfer: Transfer) extends PersistentActor with ActorLogging {
   override def persistenceId = s"transfer-${transfer.id}"
 
-  private var lastRecover: Option[String] = None
+  private var recoveredState: Option[Any] = None
+
+  import context.dispatcher
 
   override def receiveRecover = {
-    case RecoveryCompleted =>
-      log.info(s"Recovery completed, last state=$lastRecover")
-    case x =>
-      log.info(s"Recover: $x")
-      lastRecover = Some(x.toString)
+    case RecoveryCompleted => recoveredState match {
+      case None =>
+        log.info("No previous state")
+        self ! StartExport
+        context.become(exporting)
+      case Some(StartExport) =>
+        log.info("Recover from state StartExport")
+        context.system.scheduler.scheduleOnce(5 seconds, self, ExportSuccess)
+        context.become(exporting)
+      case Some(ExportSuccess) =>
+        log.info("Recover from ExportSuccess")
+      case Some(other) => log.info(s"Recovery completed, unknown state=$other")
+    }
+
+    case x => recoveredState = Some(x)
   }
 
   def noop(event: AnyRef): Unit = ()
 
   override def receiveCommand = exporting
-
-  import context.dispatcher
 
   def exporting: Receive = {
     case m@StartExport =>
@@ -47,6 +57,7 @@ class TransferActor(transfer: Transfer) extends PersistentActor with ActorLoggin
       persist(m)(noop)
       self ! StartPublish
       context.become(publishing)
+    case x => log.info(s"Unknown command: $x")
   }
 
   def publishing: Receive = {
@@ -58,5 +69,6 @@ class TransferActor(transfer: Transfer) extends PersistentActor with ActorLoggin
       log.info(m.toString)
       persist(m)(noop)
       context.stop(self)
+    case x => log.info(s"Unknown command: $x")
   }
 }

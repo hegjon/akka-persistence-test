@@ -12,7 +12,7 @@ object Main extends App {
   val gatekeeper = system.actorOf(Props[Gatekeeper], "gatekeeper")
 
   import system.dispatcher
-  system.scheduler.schedule(5 second, 35 seconds) {
+  system.scheduler.schedule(5 second, 65 seconds) {
     val transfer = new Transfer(id = UUID.randomUUID().toString)
     gatekeeper ! NewTransfer(transfer)
   }
