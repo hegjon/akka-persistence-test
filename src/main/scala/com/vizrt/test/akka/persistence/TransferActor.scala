@@ -37,7 +37,8 @@ class TransferActor(transfer: Transfer) extends PersistentActor with ActorLoggin
 
   private def startExport(m: StartExport.type): Unit = {
     log.info(m.toString)
-    context.actorOf(ExportActor.props(transfer), "export")
+    val exportActor = context.actorOf(ExportActor.props(transfer), "export")
+    exportActor ! m
     context.become(exporting)
   }
 
