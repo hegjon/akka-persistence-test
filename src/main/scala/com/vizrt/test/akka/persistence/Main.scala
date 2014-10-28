@@ -4,6 +4,7 @@ import java.util.UUID
 
 import akka.actor.{Props, ActorSystem}
 import scala.concurrent.duration._
+import scala.util.Random
 
 object Main extends App {
   println("Starting")
@@ -13,7 +14,12 @@ object Main extends App {
 
   import system.dispatcher
   system.scheduler.schedule(5 second, 65 seconds) {
-    val transfer = new Transfer(id = UUID.randomUUID().toString)
+    val assetId = Random.nextInt()
+    val mosXml = <mos><transferMedia>http://server.com/asset/{assetId}</transferMedia></mos>.toString
+
+    val created = System.currentTimeMillis()
+    val transfer = new Transfer(id = UUID.randomUUID().toString, created, mosXml)
+
     gatekeeper ! NewTransfer(transfer)
   }
 }

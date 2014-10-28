@@ -1,0 +1,5 @@
+message Transfer {
+  required string id = 1;
+  required int64 created = 2;
+  required string mosXml = 3;
+}
