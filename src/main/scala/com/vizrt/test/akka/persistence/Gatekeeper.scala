@@ -13,12 +13,12 @@ class Gatekeeper extends PersistentActor with ActorLogging {
   }
 
   override def receiveCommand = {
-    case m@NewTransfer(transfer) => persist(m)(newTransfer)
+    case t: NewTransfer => persist(t)(newTransfer)
   }
 
   private def newTransfer(t: NewTransfer): Unit = {
     log.info(t.toString)
-    val child = context.actorOf(Props(classOf[TransferActor], t.transfer), t.transfer.id)
-    activeTransfers += (t.transfer -> child)
+    val transferActor = context.actorOf(Props(classOf[TransferActor], t.transfer), t.transfer.id)
+    activeTransfers += (t.transfer -> transferActor)
   }
 }
