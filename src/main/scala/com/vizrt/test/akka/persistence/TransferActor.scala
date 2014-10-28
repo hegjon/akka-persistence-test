@@ -65,14 +65,18 @@ class TransferActor(transfer: Transfer) extends PersistentActor with ActorLoggin
   }
 
   def publishing: Receive = {
-    case m@StartPublish =>
-      log.info(m.toString)
-      persist(m)(noop)
-      context.system.scheduler.scheduleOnce(10 seconds, self, PublishSuccess)
-    case m@PublishSuccess =>
-      log.info(m.toString)
-      persist(m)(noop)
-      context.stop(self)
+    case m@StartPublish => persist(m)(startPublish)
+    case m@PublishSuccess => persist(m)(publishSuccess)
     case x => log.info(s"Unknown command: $x")
+  }
+
+  def startPublish(m: StartPublish.type): Unit = {
+    log.info(m.toString)
+    context.system.scheduler.scheduleOnce(10 seconds, self, PublishSuccess)
+  }
+
+  def publishSuccess(m: PublishSuccess.type): Unit = {
+    log.info(m.toString)
+    context.stop(self)
   }
 }
