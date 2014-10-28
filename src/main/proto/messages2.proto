@@ -3,6 +3,8 @@ package com.vizrt.test.akka.persistence;
 message Transfer {
   required string id = 1;
   required int64 created = 2;
+
+  //mosXml is a gigant XML that is the input we get from end user / external system. Simplified in this test project
   required string mosXml = 3;
 }
 
