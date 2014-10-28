@@ -11,3 +11,29 @@ message Transfer {
 message NewTransfer {
   required Transfer transfer = 1;
 }
+
+message Validated {}
+
+message StartExport {
+  optional string transferMedia = 1;
+}
+
+message ExportSuccess {}
+message ExportFailure {
+  required string error = 1;
+  required int64 ended = 2;
+}
+
+message StartTranscode {}
+message TranscodeSuccess {}
+message TranscodeFailure {
+  required string error = 1;
+  required int64 ended = 2;
+}
+
+message StartPublishing {}
+message PublishingSuccess {}
+message PublishingFailure {
+  required string error = 1;
+  required int64 ended = 2;
+}

@@ -1,15 +1,16 @@
 package com.vizrt.test.akka.persistence
 
 import akka.actor.{Props, Actor}
+import com.vizrt.test.akka.persistence.Messages2._
 
 object ExportActor {
-  def props(transfer: Messages2.Transfer) = Props(classOf[ExportActor], transfer)
+  def props(transfer: Transfer) = Props(classOf[ExportActor], transfer)
 }
 
-class ExportActor(transfer: Messages2.Transfer) extends Actor {
-  override def receive: Receive = {
-    case StartExport =>
+class ExportActor(transfer: Transfer) extends Actor {
+  override def receive = {
+    case m: StartExport =>
       Thread.sleep(5000) // XXX blocks
-      sender ! ExportSuccess
+      sender ! ExportSuccess.getDefaultInstance
   }
 }
