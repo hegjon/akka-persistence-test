@@ -13,7 +13,7 @@ class Gatekeeper extends PersistentActor with ActorLogging {
   }
 
   override def receiveCommand = {
-    case m@NewTransfer(transfer) => persist(m)(newTransfer)    
+    case m@NewTransfer(transfer) => persist(m)(newTransfer)
   }
 
   private def newTransfer(t: NewTransfer): Unit = {

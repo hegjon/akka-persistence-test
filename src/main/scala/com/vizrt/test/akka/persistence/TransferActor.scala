@@ -14,50 +14,54 @@ class TransferActor(transfer: Transfer) extends PersistentActor with ActorLoggin
 
   override def receiveRecover = {
     case RecoveryCompleted => recoveredState match {
-      case None =>
-        log.info("No previous state")
-        self ! StartExport
-        context.become(exporting)
-      case Some(StartExport) =>
-        log.info("Recover from state StartExport")
-        context.system.scheduler.scheduleOnce(5 seconds, self, ExportSuccess)
-        context.become(exporting)
-      case Some(ExportSuccess) =>
-        log.info("Recover from ExportSuccess")
+      case None => init
+      case Some(StartExport) => startExport(StartExport)
+      case Some(ExportSuccess) => exportSuccess(ExportSuccess)
+      case Some(StartTranscode) => startTranscode(StartTranscode)
+      case Some(TranscodeSuccess) => transcodeSuccess(TranscodeSuccess)
       case Some(other) => log.info(s"Recovery completed, unknown state=$other")
     }
 
     case x => recoveredState = Some(x)
   }
 
-  def noop(event: AnyRef): Unit = ()
-
   override def receiveCommand = exporting
 
   def exporting: Receive = {
-    case m@StartExport =>
-      log.info(m.toString)
-      persist(m)(noop)
-      context.system.scheduler.scheduleOnce(5 seconds, self, ExportSuccess)
-    case m@ExportSuccess =>
-      log.info(m.toString)
-      persist(m)(noop)
-      self ! StartTranscode
-      context.become(transcoding)
+    case m@StartExport => persist(m)(startExport)
+    case m@ExportSuccess => persist(m)(exportSuccess)
     case x => log.info(s"Unknown command: $x")
   }
 
+  private def init: Unit = self ! StartExport
+
+  private def startExport(m: StartExport.type): Unit = {
+    log.info(m.toString)
+    context.actorOf(ExportActor.props(transfer), "export")
+    context.become(exporting)
+  }
+
+  private def exportSuccess(m: ExportSuccess.type): Unit = {
+    log.info(m.toString)
+    self ! StartTranscode
+    context.become(transcoding)
+  }
+
   def transcoding: Receive = {
-    case m@StartTranscode =>
-      log.info(m.toString)
-      persist(m)(noop)
-      context.system.scheduler.scheduleOnce(15 seconds, self, TranscodeSuccess)
-    case m@TranscodeSuccess =>
-      log.info(m.toString)
-      persist(m)(noop)
-      self ! StartPublish
-      context.become(publishing)
+    case m@StartTranscode => persist(m)(startTranscode)
+    case m@TranscodeSuccess => persist(m)(transcodeSuccess)
     case x => log.info(s"Unknown command: $x")
+  }
+
+  private def startTranscode(m: StartTranscode.type): Unit = {
+    log.info(m.toString)
+    context.system.scheduler.scheduleOnce(15 seconds, self, TranscodeSuccess)
+  }
+
+  private def transcodeSuccess(m: TranscodeSuccess.type): Unit = {
+    log.info(m.toString)
+    self ! StartPublish
+    context.become(publishing)
   }
 
   def publishing: Receive = {
