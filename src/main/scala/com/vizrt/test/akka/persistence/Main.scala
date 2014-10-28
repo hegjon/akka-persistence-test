@@ -13,13 +13,19 @@ object Main extends App {
   val gatekeeper = system.actorOf(Props[Gatekeeper], "gatekeeper")
 
   import system.dispatcher
+
   system.scheduler.schedule(5 second, 65 seconds) {
     val assetId = Random.nextInt()
-    val mosXml = <mos><transferMedia>http://server.com/asset/{assetId}</transferMedia></mos>.toString
 
-    val created = System.currentTimeMillis()
-    val transfer = new Transfer(id = UUID.randomUUID().toString, created, mosXml)
+    val transfer = Messages2.Transfer.newBuilder()
+      .setId(UUID.randomUUID().toString)
+      .setCreated(System.currentTimeMillis())
+      .setMosXml(<mos><transferMedia>http://server.com/asset/{assetId}</transferMedia></mos>.toString)
 
-    gatekeeper ! NewTransfer(transfer)
+    val newTransfer = Messages2.NewTransfer.newBuilder()
+      .setTransfer(transfer)
+      .build()
+
+    gatekeeper ! newTransfer
   }
 }

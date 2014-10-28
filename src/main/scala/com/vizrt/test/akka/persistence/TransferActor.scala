@@ -1,12 +1,16 @@
 package com.vizrt.test.akka.persistence
 
-import akka.actor.ActorLogging
+import akka.actor.{Props, ActorLogging}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 
 import scala.concurrent.duration._
 
-class TransferActor(transfer: Transfer) extends PersistentActor with ActorLogging {
-  override def persistenceId = s"transfer-${transfer.id}"
+object TransferActor {
+  def props(transfer: Messages2.Transfer) = Props(classOf[TransferActor], transfer)
+}
+
+class TransferActor(transfer: Messages2.Transfer) extends PersistentActor with ActorLogging {
+  override def persistenceId = s"transfer-${transfer.getId}"
 
   private var recoveredState: Option[Any] = None
 
