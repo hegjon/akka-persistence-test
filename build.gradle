@@ -1,5 +1,15 @@
 apply plugin: 'scala'
 apply plugin:'application'
+apply plugin: 'protobuf'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'ws.antonov.gradle.plugins:gradle-plugin-protobuf:0.9.1'
+    }
+}
 
 mainClassName = 'com.vizrt.test.akka.persistence.Main'
 
