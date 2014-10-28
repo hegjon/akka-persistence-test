@@ -2,7 +2,7 @@ package com.vizrt.test.akka.persistence
 
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import com.vizrt.test.akka.persistence.Messages2._
+import com.vizrt.test.akka.persistence.Messages._
 
 import scala.concurrent.duration._
 
@@ -20,11 +20,13 @@ class TransferActor(transfer: Transfer) extends PersistentActor with ActorLoggin
   override def receiveRecover = {
     case RecoveryCompleted => recoveredState match {
       case None => init
-      case Some(s: StartExport) => startExport(s)
-      case Some(s: ExportSuccess) => exportSuccess(s)
-      case Some(s: StartTranscode) => startTranscode(s)
-      case Some(s: TranscodeSuccess) => transcodeSuccess(s)
-      case Some(other) => log.info(s"Recovery completed, unknown state=$other")
+      case Some(m: StartExport) => startExport(m)
+      case Some(m: ExportSuccess) => exportSuccess(m)
+      case Some(m: StartTranscode) => startTranscode(m)
+      case Some(m: TranscodeSuccess) => transcodeSuccess(m)
+      case Some(m: StartPublishing) => startPublish(m)
+      case Some(m: PublishingSuccess) => publishSuccess(m)
+      case Some(other) => log.info(s"Recovery completed, unknown state=${other.getClass.getSimpleName}")
     }
 
     case x => recoveredState = Some(x)
@@ -35,20 +37,20 @@ class TransferActor(transfer: Transfer) extends PersistentActor with ActorLoggin
   def exporting: Receive = {
     case m: StartExport => persist(m)(startExport)
     case m: ExportSuccess => persist(m)(exportSuccess)
-    case x => log.info(s"Unknown command: $x")
+    case x => log.info(s"Unknown command type: ${x.getClass.getSimpleName}")
   }
 
   private def init: Unit = self ! StartExport.getDefaultInstance
 
   private def startExport(m: StartExport): Unit = {
-    log.info(m.toString)
+    log.info("StartExport")
     val exportActor = context.actorOf(ExportActor.props(transfer), "export")
     exportActor ! m
     context.become(exporting)
   }
 
   private def exportSuccess(m: ExportSuccess): Unit = {
-    log.info(m.toString)
+    log.info("ExportSuccess")
     self ! StartTranscode.getDefaultInstance
     context.become(transcoding)
   }
@@ -56,16 +58,16 @@ class TransferActor(transfer: Transfer) extends PersistentActor with ActorLoggin
   def transcoding: Receive = {
     case m: StartTranscode => persist(m)(startTranscode)
     case m: TranscodeSuccess => persist(m)(transcodeSuccess)
-    case x => log.info(s"Unknown command: $x")
+    case x => log.info(s"Unknown command type: ${x.getClass.getSimpleName}")
   }
 
   private def startTranscode(m: StartTranscode): Unit = {
-    log.info(m.toString)
+    log.info("StartTranscode")
     context.system.scheduler.scheduleOnce(15 seconds, self, TranscodeSuccess.getDefaultInstance)
   }
 
   private def transcodeSuccess(m: TranscodeSuccess): Unit = {
-    log.info(m.toString)
+    log.info("TranscodeSuccess")
     self ! StartPublishing.getDefaultInstance
     context.become(publishing)
   }
@@ -73,16 +75,16 @@ class TransferActor(transfer: Transfer) extends PersistentActor with ActorLoggin
   def publishing: Receive = {
     case m: StartPublishing => persist(m)(startPublish)
     case m: PublishingSuccess => persist(m)(publishSuccess)
-    case x => log.info(s"Unknown command: $x")
+    case x => log.info(s"Unknown command type: ${x.getClass.getSimpleName}")
   }
 
   def startPublish(m: StartPublishing): Unit = {
-    log.info(m.toString)
+    log.info("StartPublish")
     context.system.scheduler.scheduleOnce(10 seconds, self, PublishingSuccess.getDefaultInstance)
   }
 
   def publishSuccess(m: PublishingSuccess): Unit = {
-    log.info(m.toString)
+    log.info("PublishSuccess")
     context.stop(self)
   }
 }

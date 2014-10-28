@@ -2,7 +2,8 @@ package com.vizrt.test.akka.persistence
 
 import akka.actor.{ActorLogging, ActorRef, Props}
 import akka.persistence.PersistentActor
-import com.vizrt.test.akka.persistence.Messages2._
+import com.google.protobuf.TextFormat
+import com.vizrt.test.akka.persistence.Messages._
 
 class Gatekeeper extends PersistentActor with ActorLogging {
   private var activeTransfers = Map[Transfer, ActorRef]()
@@ -18,7 +19,7 @@ class Gatekeeper extends PersistentActor with ActorLogging {
   }
 
   private def newTransfer2(t: NewTransfer): Unit = {
-    log.info(t.toString)
+    log.info(TextFormat.shortDebugString(t))
     val transfer = t.getTransfer
     val transferActor = context.actorOf(Props(classOf[TransferActor], transfer), transfer.getId)
     activeTransfers += (transfer -> transferActor)
